@@ -1,4 +1,4 @@
-apiVersion: v2
+apiVersion: v1
 name: node-feature-discovery
 description: |
   Detects hardware features available on each node in a Kubernetes cluster, and advertises

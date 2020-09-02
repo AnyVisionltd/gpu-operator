@@ -2,7 +2,6 @@ dependencies:
   - name: node-feature-discovery
     version: 0.1.0
     condition: global.services.enabled
-
   - name: gpu-operator
     version: 1.0.0
     condition: global.services.enabled

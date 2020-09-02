@@ -2,11 +2,59 @@
 apiVersion: v1
 kind: Pod
 metadata:
-  name: kafka
+  name: k8s-device-plugin
 spec:
   containers:
-  - name: kafka
-    image: strimzi/kafka:0.16.2-kafka-2.4.0
+  - name: k8s-device-plugin
+    image: nvidia/k8s-device-plugin:1.0.0-beta6
+    command: ["sh", "-c"]
+    args:
+      - exit 0
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nvidia-driver
+spec:
+  containers:
+  - name: nvidia-driver
+    image: nvidia/driver:440.64.00-debian9
+    command: ["sh", "-c"]
+    args:
+      - exit 0
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: dcgm-exporter
+spec:
+  containers:
+  - name: dcgm-exporter
+    image: nvidia/dcgm-exporter:1.7.2-2.0.0-rc.9-ubuntu18.04
+    command: ["sh", "-c"]
+    args:
+      - exit 0
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nvidia-sample-vectoradd
+spec:
+  containers:
+  - name: nvidia-sample-vectoradd
+    image: nvidia/samples:cuda10.2-vectorAdd
+    command: ["sh", "-c"]
+    args:
+      - exit 0
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: container-toolkit
+spec:
+  containers:
+  - name: container-toolkit
+    image: gcr.io/rec-repo/container-toolkit:1.0.2-debian9
     command: ["sh", "-c"]
     args:
       - exit 0
