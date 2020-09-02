@@ -1,0 +1,57 @@
+{{- if .Values.global.invocation.enabled }}
+{{- $rand := randAlphaNum 5 | lower -}}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  labels:
+    job-name: "{{.Chart.Name}}-invocation-{{ $rand }}"
+    app: "{{.Chart.Name}}"
+  name: "{{.Chart.Name}}-invocation-{{ $rand }}"
+  namespace: kube-system
+spec:
+  activeDeadlineSeconds: 3600
+  backoffLimit: 0
+  completions: 1
+  parallelism: 1
+  template:
+    metadata:
+      labels:
+        job-name: "{{.Chart.Name}}-invocation-{{ $rand }}"
+    spec:
+      restartPolicy: Never
+      dnsPolicy: ClusterFirst      
+      terminationGracePeriodSeconds: 30
+      tolerations:
+      - effect: NoSchedule
+        operator: Exists
+      - effect: NoExecute
+        operator: Exists    
+      containers:
+      - name: install
+        image: "{{default .Values.invocationImage.registry .Values.global.localRegistry}}{{.Values.invocationImage.imageName}}:{{.Values.invocationImage.imageTag}}"
+        imagePullPolicy: IfNotPresent
+        command:
+        - /bin/bash
+        args:
+        - install.sh
+        {{- if .Values.extraEnvironmentVars }}
+        env:
+         {{- range $key, $value := .Values.extraEnvironmentVars }}
+        - name: {{ $key }}
+          value: {{ $value | quote }}
+         {{- end }}
+        {{- end }}
+        volumeMounts:
+        - name: certs
+          mountPath: /etc/ssl/certs
+        - name: rancher-cli-token
+          mountPath: "/etc/rancher"
+          readOnly: true
+      volumes:
+      - name: certs
+        hostPath:
+          path: /etc/ssl/certs
+      - name: rancher-cli-token
+        secret:
+          secretName: rancher-cli-token
+{{- end }}

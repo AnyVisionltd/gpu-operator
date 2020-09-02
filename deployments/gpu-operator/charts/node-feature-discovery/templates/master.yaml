@@ -30,7 +30,7 @@ spec:
         - name: master
           securityContext:
             {{- toYaml .Values.master.securityContext | nindent 12 }}
-          image: "{{ .Values.image.repository }}:{{ .Chart.AppVersion }}"
+          image: "{{ default .Values.image.registry .Values.global.localRegistry }}{{ .Values.image.repository }}:{{ .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
           - containerPort: 8080

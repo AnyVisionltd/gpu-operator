@@ -1,0 +1,5 @@
+*.tmpl
+Dockerfile
+.gitignore
+Makefile
+*.tar

@@ -25,9 +25,9 @@ spec:
       containers:
       - name: gpu-operator
         {{- if .Values.operator.tag}}
-        image: {{ .Values.operator.repository }}/{{ .Values.operator.image }}:{{ .Values.operator.tag }}
+        image: {{ default .Values.operator.registry .Values.global.localRegistry }}{{ .Values.operator.repository }}/{{ .Values.operator.image }}:{{ .Values.operator.tag }}
         {{- else }}
-        image: {{ .Values.operator.repository }}/{{ .Values.operator.image }}:{{ .Chart.AppVersion }}
+        image: {{ default .Values.operator.registry .Values.global.localRegistry }}{{ .Values.operator.repository }}/{{ .Values.operator.image }}:{{ .Chart.AppVersion }}
         {{- end }}
         imagePullPolicy: IfNotPresent
         command: ["gpu-operator"]
