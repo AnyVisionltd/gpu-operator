@@ -1,6 +1,6 @@
 CHART_NAME := $(shell cat ./Chart.yaml | grep ^name: | cut -d":" -f 2 |  tr -d "[:space:]" | tr -d '"')
 CHART_VERSION := $(shell cat ./Chart.yaml | grep ^version: | cut -d":" -f 2 |  tr -d "[:space:]" | tr -d '"')
-HELM ?= microk8s helm
+HELM ?= helm
 TELE ?= tele
 YQ ?= yq
 DOCKER ?= docker
