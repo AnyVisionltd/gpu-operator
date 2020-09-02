@@ -75,14 +75,14 @@ operator:
                 values: [""]
 
 driver:
-  registry: ""
-  repository: nvidia
-  image: driver
-  version: "440.64.00"
+  registry: gcr.io/
+  repository: rec-repo/
+  image: nvidia-driver
+  version: 440.64.00-debian9
 
 toolkit:
-  registry: ""
-  repository: gcr.io/rec-repo
+  registry: gcr.io/
+  repository: rec-repo/
   image: container-toolkit
   version: 1.0.2-debian9
 

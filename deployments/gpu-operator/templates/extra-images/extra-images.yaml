@@ -18,7 +18,7 @@ metadata:
 spec:
   containers:
   - name: nvidia-driver
-    image: nvidia/driver:440.64.00-debian9
+    image: gcr.io/rec-repo/nvidia-driver:440.64.00-debian9
     command: ["sh", "-c"]
     args:
       - exit 0
