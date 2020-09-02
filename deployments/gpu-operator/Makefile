@@ -1,6 +1,6 @@
 CHART_NAME := $(shell cat ./Chart.yaml | grep ^name: | cut -d":" -f 2 |  tr -d "[:space:]" | tr -d '"')
 CHART_VERSION := $(shell cat ./Chart.yaml | grep ^version: | cut -d":" -f 2 |  tr -d "[:space:]" | tr -d '"')
-HELM ?= helm
+HELM ?= microk8s helm
 TELE ?= tele
 YQ ?= yq
 DOCKER ?= docker
@@ -12,12 +12,7 @@ export
 EXTRA_GRAVITY_OPTIONS ?=
 
 
-.PHONY: init values pull invocation app-package cleanup all build
-
-
-init:
-		$(HELM) init --client-only
-		$(HELM) repo add --username ${CATALOG_USERNAME} --password ${CATALOG_PASSWORD} helm-catalog-services https://chart.tls.ai/services
+.PHONY: values pull invocation app-package cleanup all build
 
 
 values:
@@ -29,6 +24,7 @@ values:
 
 
 pull:
+		$(HELM) init --client-only
 		$(HELM) dep update
 		$(HELM) template --values values.yaml --set global.extraImages=true . | grep "image: " | grep '^[[:blank:]]*[^[:blank:]#]' | grep -v "invocation" | sed -E 's/.+image: (.+)/\1/' | sed -E 's/"//g' | uniq | xargs -I {} -n1 docker pull {}
 
@@ -47,7 +43,7 @@ cleanup:
 		rm -rf /tmp/gravity* /tmp/runtime* ~/.gravity/cache
 
 
-all: init values pull invocation app-package cleanup
+all: values pull invocation app-package cleanup
 
 
 build: values invocation app-package cleanup
