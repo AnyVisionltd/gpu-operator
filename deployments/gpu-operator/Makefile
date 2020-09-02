@@ -4,8 +4,8 @@ HELM ?= helm
 TELE ?= tele
 YQ ?= yq
 DOCKER ?= docker
-CATALOG_USERNAME ?= "anyvision"
-CATALOG_PASSWORD ?= "Any4Vision!"
+CATALOG_USERNAME ?= ""
+CATALOG_PASSWORD ?= ""
 RAND := $(shell cat /dev/urandom | tr -dc 'a-z0-9' | fold -w 8 | head -n 1)
 export
 
