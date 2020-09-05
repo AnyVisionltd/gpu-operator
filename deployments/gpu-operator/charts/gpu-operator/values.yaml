@@ -33,7 +33,7 @@ platform:
 
 operator:
   registry: ""
-  repository: nvidia
+  repository: nvidia/
   image: gpu-operator
 # If not set, the tag defaults to Chart.AppVersion
   tag: "1.1.7"
@@ -76,12 +76,12 @@ toolkit:
 
 devicePlugin:
   registry: ""
-  repository: nvidia
+  repository: nvidia/
   image: k8s-device-plugin
   version: 1.0.0-beta6
 
 dcgmExporter:
   registry: ""
-  repository: nvidia
+  repository: nvidia/
   image: dcgm-exporter
   version: 1.7.2-2.0.0-rc.9-ubuntu18.04
