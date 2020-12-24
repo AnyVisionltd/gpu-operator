@@ -7,6 +7,3 @@ gravity app install --name=gpu-operator --set global.localRegistry="leader.telek
 ```
 gravity app install --name=gpu-operator --set global.localRegistry="localhost:5000/" --registry=localhost:5000 --insecure [TAR_PACKAGE]
 ```
-
-### Note:
-Might require manual `kubectl label nodes [NODES] feature.node.kubernetes.io/pci-10de.present=true` if NFD does not label the GPU nodes automatically.
