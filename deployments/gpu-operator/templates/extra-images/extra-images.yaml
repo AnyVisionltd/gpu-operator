@@ -6,7 +6,7 @@ metadata:
 spec:
   containers:
   - name: k8s-device-plugin
-    image: nvidia/k8s-device-plugin:1.0.0-beta6
+    image: nvcr.io/nvidia/k8s-device-plugin:v0.7.1
     command: ["sh", "-c"]
     args:
       - exit 0
@@ -30,7 +30,7 @@ metadata:
 spec:
   containers:
   - name: dcgm-exporter
-    image: nvidia/dcgm-exporter:1.7.2-2.0.0-rc.9-ubuntu18.04
+    image: nvcr.io/nvidia/k8s/dcgm-exporter:2.0.13-2.1.2-ubuntu20.04
     command: ["sh", "-c"]
     args:
       - exit 0
@@ -42,7 +42,19 @@ metadata:
 spec:
   containers:
   - name: nvidia-sample-vectoradd
-    image: nvidia/samples:cuda10.2-vectorAdd
+    image: nvcr.io/nvidia/k8s/cuda-sample:vectoradd-cuda10.2
+    command: ["sh", "-c"]
+    args:
+      - exit 0
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: gpu-feature-discovery
+spec:
+  containers:
+  - name: gpu-feature-discovery
+    image: nvcr.io/nvidia/gpu-feature-discovery:v0.2.2
     command: ["sh", "-c"]
     args:
       - exit 0
