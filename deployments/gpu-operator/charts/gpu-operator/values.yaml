@@ -52,7 +52,7 @@ driver:
   image: nvidia-driver
   version: "440.64.00"
   imagePullPolicy: IfNotPresent
-  imagePullSecrets: []
+  imagePullSecrets: ["imagepullsecret"]
   env: []
   tolerations:
   - key: nvidia.com/gpu
@@ -72,9 +72,9 @@ toolkit:
   registry: "gcr.io/"
   repository: rec-repo
   image: container-toolkit
-  version: 1.0.2-debian9
+  version: 1.4.1-debian9
   imagePullPolicy: IfNotPresent
-  imagePullSecrets: []
+  imagePullSecrets: ["imagepullsecret"]
   env: []
   tolerations:
   # Allow this pod to be rescheduled while the node is in "critical add-ons only" mode.

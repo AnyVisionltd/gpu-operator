@@ -15,7 +15,7 @@ spec:
     {{- if .Values.operator.validator }}
     validator:
       {{- if .Values.operator.validator.repository }}
-      repository: {{ .Values.operator.validator.repository }}
+      repository: {{ default .Values.operator.validator.registry .Values.global.localRegistry }}{{ .Values.operator.validator.repository }}
       {{- end }}
       {{- if .Values.operator.validator.image }}
       image: {{ .Values.operator.validator.image }}
