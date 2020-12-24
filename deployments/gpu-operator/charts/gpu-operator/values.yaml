@@ -5,10 +5,150 @@ global:
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
-replicaCount: 1
+platform:
+  openshift: false
 
 nfd:
   enabled: true
+
+operator:
+  registry: ""
+  repository: nvidia
+  image: gpu-operator
+  # If version is not specified, then default is to use chart.AppVersion
+  #version: 1.4.0
+  imagePullPolicy: IfNotPresent
+  imagePullSecrets: []
+  defaultRuntime: docker
+  deployGFD: true
+  validator:
+    image: cuda-sample
+    repository: nvcr.io/nvidia/k8s
+    version: vectoradd-cuda10.2
+    imagePullPolicy: IfNotPresent
+  tolerations:
+  - key: "node-role.kubernetes.io/master"
+    operator: "Equal"
+    value: ""
+    effect: "NoSchedule"
+  annotations:
+    openshift.io/scc: restricted-readonly
+  affinity:
+    nodeAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 1
+          preference:
+            matchExpressions:
+              - key: "node-role.kubernetes.io/master"
+                operator: In
+                values: [""]
+  logging:
+    timeEncoding: epoch
+
+driver:
+  registry: "gcr.io/"
+  repository: rec-repo
+  image: nvidia-driver
+  version: "440.64.00"
+  imagePullPolicy: IfNotPresent
+  imagePullSecrets: []
+  env: []
+  tolerations:
+  - key: nvidia.com/gpu
+    operator: Exists
+    effect: NoSchedule
+  nodeSelector:
+    nvidia.com/gpu.present: "true"
+  affinity: {}
+  podSecurityContext: {}
+  securityContext:
+    privileged: true
+    seLinuxOptions:
+      level: "s0"
+  resources: {}
+
+toolkit:
+  registry: "gcr.io/"
+  repository: rec-repo
+  image: container-toolkit
+  version: 1.0.2-debian9
+  imagePullPolicy: IfNotPresent
+  imagePullSecrets: []
+  env: []
+  tolerations:
+  # Allow this pod to be rescheduled while the node is in "critical add-ons only" mode.
+  # This, along with the annotation above marks this pod as a critical add-on.
+  - key: CriticalAddonsOnly
+    operator: Exists
+  - key: nvidia.com/gpu
+    operator: Exists
+    effect: NoSchedule
+  nodeSelector:
+    nvidia.com/gpu.present: "true"
+  affinity: {}
+  podSecurityContext: {}
+  securityContext:
+    privileged: true
+    seLinuxOptions:
+      level: "s0"
+  resources: {}
+
+devicePlugin:
+  registry: "nvcr.io/"
+  repository: nvidia
+  image: k8s-device-plugin
+  version: v0.7.1
+  imagePullPolicy: IfNotPresent
+  imagePullSecrets: []
+  args:
+    - "--mig-strategy=none"
+    - "--pass-device-specs=false"
+    - "--fail-on-init-error=true"
+    - "--device-list-strategy=envvar"
+  env: []
+  tolerations: []
+  nodeSelector:
+    nvidia.com/gpu.present: "true"
+  affinity: {}
+  podSecurityContext: {}
+  securityContext:
+    privileged: true
+  resources: {}
+
+dcgmExporter:
+  registry: "nvcr.io/"
+  repository: nvidia/k8s
+  image: dcgm-exporter
+  version: 2.0.13-2.1.2-ubuntu20.04
+  imagePullPolicy: IfNotPresent
+  args:
+    - "-f"
+    - "/etc/dcgm-exporter/dcp-metrics-included.csv"
+  env: []
+  tolerations: []
+  nodeSelector: {}
+  affinity: {}
+  podSecurityContext: {}
+  securityContext: {}
+  resources: {}
+
+gfd:
+  registry: "nvcr.io/"
+  repository: nvidia
+  image: gpu-feature-discovery
+  version: v0.2.2
+  imagePullPolicy: IfNotPresent
+  imagePullSecrets: []
+  tolerations: []
+  env: []
+  nodeSelector:
+    nvidia.com/gpu.present: "true"
+  affinity: {}
+  podSecurityContext: {}
+  securityContext: {}
+  resources: {}
+  migStrategy: none
+  discoveryIntervalSeconds: 60
 
 node-feature-discovery:
   worker:
@@ -28,60 +168,6 @@ node-feature-discovery:
           deviceLabelFields:
           - vendor
 
-platform:
-  openshift: false
-
-operator:
-  registry: ""
-  repository: nvidia
-  image: gpu-operator
-# If not set, the tag defaults to Chart.AppVersion
-  tag: "1.1.7"
-
-  defaultRuntime: docker
-  clusterversion: 0.0
-
-  nodeSelector: {}
-
-  tolerations:
-  - key: "node-role.kubernetes.io/master"
-    operator: "Equal"
-    value: ""
-    effect: "NoSchedule"
-
-  annotations:
-    openshift.io/scc: restricted-readonly
-
-  affinity:
-    nodeAffinity:
-      preferredDuringSchedulingIgnoredDuringExecution:
-        - weight: 1
-          preference:
-            matchExpressions:
-              - key: "node-role.kubernetes.io/master"
-                operator: In
-                values: [""]
-
-driver:
-  registry: gcr.io/
-  repository: rec-repo
-  image: nvidia-driver
-  version: 440.64.00
-
-toolkit:
-  registry: gcr.io/
-  repository: rec-repo
-  image: container-toolkit
-  version: 1.0.2-debian9
-
-devicePlugin:
-  registry: ""
-  repository: nvidia
-  image: k8s-device-plugin
-  version: 1.0.0-beta6
-
-dcgmExporter:
-  registry: ""
-  repository: nvidia
-  image: dcgm-exporter
-  version: 1.7.2-2.0.0-rc.9-ubuntu18.04
+  master:
+    extraLabelNs:
+      - nvidia.com

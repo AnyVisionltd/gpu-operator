@@ -8,11 +8,14 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
+	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
@@ -49,6 +52,12 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 		return err
 	}
 
+	// Watch for changes to Node labels and requeue the owner ClusterPolicy
+	err = addWatchNewGPUNode(c, mgr, r)
+	if err != nil {
+		return err
+	}
+
 	// TODO(user): Modify this to be the types you create that are owned by the primary resource
 	// Watch for changes to secondary resource Pods and requeue the owner ClusterPolicy
 	err = c.Watch(&source.Kind{Type: &corev1.Pod{}}, &handler.EnqueueRequestForOwner{
@@ -60,6 +69,75 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	}
 
 	return nil
+}
+
+func addWatchNewGPUNode(c controller.Controller, mgr manager.Manager, r reconcile.Reconciler) error {
+	// https://book-v1.book.kubebuilder.io/beyond_basics/controller_watches.html
+
+	// 'UpdateFunc' and 'CreateFunc' used to judge if a event about the object is
+	// what we want. If that is true, the event will be processed by the reconciler.
+	p := predicate.Funcs{
+		CreateFunc: func(e event.CreateEvent) bool {
+			labels := e.Meta.GetLabels()
+
+			gpuCommonLabelMissing := hasGPULabels(labels) && !hasCommonGPULabel(labels)
+			if gpuCommonLabelMissing {
+				log.Info("New node needs an update, GPU common label missing.",
+					"name", e.Meta.GetName())
+			}
+
+			return gpuCommonLabelMissing
+		},
+
+		UpdateFunc: func(e event.UpdateEvent) bool {
+			newLabels := e.MetaNew.GetLabels()
+
+			gpuCommonLabelMissing := hasGPULabels(newLabels) && !hasCommonGPULabel(newLabels)
+			gpuCommonLabelOutdated := !hasGPULabels(newLabels) && hasCommonGPULabel(newLabels)
+			needsUpdate := gpuCommonLabelMissing || gpuCommonLabelOutdated
+			if needsUpdate {
+				log.Info("Node needs an update",
+					"name", e.MetaNew.GetName(),
+					"gpuCommonLabelMissing", gpuCommonLabelMissing,
+					"gpuCommonLabelOutdated", gpuCommonLabelOutdated)
+			}
+
+			return needsUpdate
+		},
+	}
+
+	// Define a mapping from the Node object in the event to one or more
+	// ClusterPolicy objects to Reconcile
+	mapFn := handler.ToRequestsFunc(
+		func(a handler.MapObject) []reconcile.Request {
+			// find all the ClusterPolicy to trigger their reconciliation
+			opts := []client.ListOption{} // Namespace = "" to list across all namespaces.
+			list := &gpuv1.ClusterPolicyList{}
+
+			err := mgr.GetClient().List(context.TODO(), list, opts...)
+			if err != nil {
+				log.Error(err, "Unable to list ClusterPolicies")
+				return []reconcile.Request{}
+			}
+
+			cp_to_rec := []reconcile.Request{}
+
+			for _, cp := range list.Items {
+				cp_to_rec = append(cp_to_rec, reconcile.Request{NamespacedName: types.NamespacedName{
+					Name:      cp.ObjectMeta.GetName(),
+					Namespace: cp.ObjectMeta.GetNamespace(),
+				}})
+			}
+			log.Info("Reconciliate ClusterPolicies after node label update", "nb", len(cp_to_rec))
+
+			return cp_to_rec
+		})
+
+	err := c.Watch(&source.Kind{Type: &corev1.Node{}}, &handler.EnqueueRequestsFromMapFunc{
+		ToRequests: mapFn,
+	}, p)
+
+	return err
 }
 
 // blank assignment to verify that ReconcileClusterPolicy implements reconcile.Reconciler
@@ -106,26 +184,34 @@ func (r *ReconcileClusterPolicy) Reconcile(request reconcile.Request) (reconcile
 
 	err = ctrl.init(r, instance)
 	if err != nil {
+		log.Error(err, "Failed to initialize ClusterPolicy controller")
 		return reconcile.Result{}, err
 	}
 
 	for {
-		stat, err := ctrl.step()
+		status, statusError := ctrl.step()
 		// Update the CR status
-		instance.Status.State = stat
-		errr := r.client.Status().Update(context.TODO(), instance)
-		if errr != nil {
-			log.Error(errr, "Failed to update ClusterPolicy status")
-			return reconcile.Result{RequeueAfter: time.Second * 5}, err
-		}
-
+		instance = &gpuv1.ClusterPolicy{}
+		err := r.client.Get(context.TODO(), request.NamespacedName, instance)
 		if err != nil {
+			log.Error(err, "Failed to get ClusterPolicy instance for status update")
 			return reconcile.Result{RequeueAfter: time.Second * 5}, err
 		}
+		if instance.Status.State != status {
+			instance.Status.State = status
+			err = r.client.Status().Update(context.TODO(), instance)
+			if err != nil {
+				log.Error(err, "Failed to update ClusterPolicy status")
+				return reconcile.Result{RequeueAfter: time.Second * 5}, err
+			}
+		}
+		if statusError != nil {
+			return reconcile.Result{RequeueAfter: time.Second * 5}, statusError
+		}
 
-		if stat == "NotReady" {
+		if status == gpuv1.NotReady {
 			// If the resource is not ready, wait 5 secs and reconcile
-			log.Info("ClusterPolicy step wasn't ready", "State:", stat)
+			log.Info("ClusterPolicy step wasn't ready", "State:", status)
 			return reconcile.Result{RequeueAfter: time.Second * 5}, nil
 		}
 
