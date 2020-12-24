@@ -4,20 +4,70 @@ metadata:
   name: gpu-cluster-policy
 spec:
   operator:
-    defaultRuntime: docker
+    defaultRuntime: crio
+    deployGFD: true
+    validator:
+      repository: nvcr.io/nvidia/k8s
+      image: cuda-sample
+      version: "vectoradd-cuda10.2-ubi8"
+      imagePullSecrets: []
   driver:
+    repository: nvcr.io/nvidia
     image: driver
-    repository: nvidia
-    version: 440.64.00
+    version: "450.80.02"
+    tolerations: []
+    nodeSelector: {}
+    affinity: {}
+    podSecurityContext: {}
+    securityContext: {}
+    resources: {}
   toolkit:
+    repository: nvcr.io/nvidia/k8s
+    version: 1.4.0-ubi8
     image: container-toolkit
-    repository: nvidia
-    version: 1.0.0-beta.0
+    tolerations: []
+    nodeSelector: {}
+    affinity: {}
+    podSecurityContext: {}
+    securityContext: {}
+    resources: {}
   devicePlugin:
+    repository: nvcr.io/nvidia
     image: k8s-device-plugin
-    repository: nvidia
-    version: 1.0.0-beta4
+    version: v0.7.1-ubi8
+    args:
+      - "--mig-strategy=none"
+      - "--pass-device-specs=false"
+      - "--fail-on-init-error=true"
+      - "--device-list-strategy=envvar"
+    tolerations: []
+    nodeSelector: {}
+    affinity: {}
+    podSecurityContext: {}
+    securityContext: {}
+    resources: {}
   dcgmExporter:
+    repository: nvcr.io/nvidia/k8s
     image: dcgm-exporter
-    repository: nvidia
-    version: 1.7.2-2.0.0-rc.5-ubuntu18.04
+    version: 2.0.13-2.1.2-ubi8
+    args:
+      - "-f"
+      - "/etc/dcgm-exporter/default-counters.csv"
+    tolerations: []
+    nodeSelector: {}
+    affinity: {}
+    podSecurityContext: {}
+    securityContext: {}
+    resources: {}
+  gfd:
+    repository: nvcr.io/nvidia
+    image: gpu-feature-discovery
+    version: v0.2.2
+    tolerations: []
+    nodeSelector: {}
+    affinity: {}
+    podSecurityContext: {}
+    securityContext: {}
+    resources: {}
+    migStrategy: none
+    discoveryIntervalSeconds: 60

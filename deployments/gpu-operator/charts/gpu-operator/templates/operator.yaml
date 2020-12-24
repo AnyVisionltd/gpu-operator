@@ -20,17 +20,23 @@ spec:
         {{- toYaml .Values.operator.annotations | nindent 8 }}
     spec:
       serviceAccountName: gpu-operator
-      # readOnlyRootFilesystem: true
-
+      {{- if .Values.operator.imagePullSecrets }}
+      imagePullSecrets:
+      {{- range .Values.operator.imagePullSecrets }}
+        - name: {{ . }}
+      {{- end }}
+      {{- end }}
       containers:
       - name: gpu-operator
-        {{- if .Values.operator.tag}}
-        image: {{ default .Values.operator.registry .Values.global.localRegistry }}{{ .Values.operator.repository }}/{{ .Values.operator.image }}:{{ .Values.operator.tag }}
+        {{- if .Values.operator.version}}
+        image: {{ default .Values.operator.registry .Values.global.localRegistry }}{{ .Values.operator.repository }}/{{ .Values.operator.image }}:{{ .Values.operator.version }}
         {{- else }}
         image: {{ default .Values.operator.registry .Values.global.localRegistry }}{{ .Values.operator.repository }}/{{ .Values.operator.image }}:{{ .Chart.AppVersion }}
         {{- end }}
         imagePullPolicy: IfNotPresent
         command: ["gpu-operator"]
+        args:
+        - "--zap-time-encoding={{ .Values.operator.logging.timeEncoding }}"
         env:
         - name: WATCH_NAMESPACE
           value: ""
@@ -40,17 +46,23 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: metadata.name
+        volumeMounts:
+          - name: host-os-release
+            mountPath: "/host-etc/os-release"
+            readOnly: true
         readinessProbe:
           exec:
             command: ["stat", "/tmp/operator-sdk-ready"]
-
           initialDelaySeconds: 4
           periodSeconds: 10
           failureThreshold: 1
         ports:
         - containerPort: 60000
           name: metrics
-
+      volumes:
+        - name: host-os-release
+          hostPath:
+            path: "/etc/os-release"
     {{- with .Values.operator.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
@@ -63,4 +75,3 @@ spec:
       tolerations:
         {{- toYaml . | nindent 8 }}
     {{- end }}
-

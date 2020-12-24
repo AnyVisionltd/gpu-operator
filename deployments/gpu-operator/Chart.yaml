@@ -1,7 +1,23 @@
 apiVersion: v1
 name: gpu-operator
-version: 1.0.0
+version: 1.4.0
 kubeVersion: ">= 1.13.0-0"
 description: NVIDIA GPU Operator creates/configures/manages GPUs atop Kubernetes
-appVersion: "1.1.7"
-home: https://github.com/NVIDIA/gpu-operator
+appVersion: "1.4.0"
+icon: https://assets.nvidiagrid.net/ngc/logos/GPUoperator.png
+sources:
+- https://github.com/NVIDIA/gpu-operator
+home: https://docs.nvidia.com/datacenter/cloud-native/gpu-operator/overview.html
+keywords:
+  - gpu
+  - cuda
+  - compute
+  - operator
+  - deep learning
+  - monitoring
+  - tesla
+
+dependencies:
+  - name: node-feature-discovery
+    version: 2.0.0
+    condition: nfd.enabled
