@@ -35,7 +35,7 @@ helm-dep-update:
 .PHONY: helm-package
 helm-package:
 	cp -f $(ROOT_DIR)/values.yaml.tmpl $(ROOT_DIR)/values.yaml
-	$(HELM) package --version $(CHART_VERSION) --dependency-update $(ROOT_DIR)
+	$(HELM) package --version $(CHART_VERSION) $(ROOT_DIR)
 
 
 .PHONY: helm-push
@@ -52,7 +52,7 @@ values:
 
 .PHONY: docker-pull
 docker-pull:
-	$(HELM) template --values $(ROOT_DIR)/values.yaml --set global.extraImages=true $(ROOT_DIR) | grep "image: " | grep '^[[:blank:]]*[^[:blank:]#]' | grep -v "invocation" | sed -E 's/.+image: (.+)/\1/' | sed -E 's/"//g' | uniq | grep -Ev '^(nvidia-driver|container-toolkit|k8s-device-plugin|dcgm-exporter)' | xargs -I {} -n1 docker pull {}
+	$(HELM) template --values $(ROOT_DIR)/values.yaml --set global.extraImages=true $(ROOT_DIR) | grep "image: " | grep '^[[:blank:]]*[^[:blank:]#]' | grep -v "invocation" | sed -E 's/.+image: (.+)/\1/' | sed -E 's/"//g' | uniq | grep -Ev '^(nvidia-driver|container-toolkit|k8s-device-plugin|dcgm-exporter|cuda-sample|gpu-feature-discovery)' | xargs -I {} -n1 docker pull {}
 
 
 .PHONY: invocation

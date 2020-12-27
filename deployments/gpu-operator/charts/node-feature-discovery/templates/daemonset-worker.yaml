@@ -32,7 +32,7 @@ spec:
         - name: {{ .Chart.Name }}-master
           securityContext:
             {{- toYaml .Values.worker.securityContext | nindent 12 }}
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          image: "{{ default .Values.image.registry .Values.global.localRegistry}}{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           env:
             - name: NODE_NAME
