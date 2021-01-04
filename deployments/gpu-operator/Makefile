@@ -7,6 +7,7 @@ HELM ?= helm
 CATALOG_NAME ?= services
 CHART_NAME ?= $(shell cat ./Chart.yaml | grep ^name: | cut -d":" -f 2 |  tr -d "[:space:]" | tr -d '"')
 CHART_VERSION ?= $(shell cat ./Chart.yaml | grep ^version: | cut -d":" -f 2 |  tr -d "[:space:]" | tr -d '"')
+DRIVER_VERSION ?= $(shell yq r ./charts/gpu-operator/values.yaml driver.version | awk -F '.' {'print $$1"-"$$2'})
 HELM_SVC_CATALOG_URL ?= https://chart.tls.ai/services
 HELM_SVC_CATALOG_CRED_USR ?=
 HELM_SVC_CATALOG_CRED_PSW ?=
@@ -68,7 +69,7 @@ invocation:
 gravity-app-package:
 	rm -f $(CHART_NAME)-$(CHART_VERSION)-app-image.tar
 	$(TELE) build --state-dir=$(TELE_STATE_DIR) --verbose --overwrite --values $(ROOT_DIR)/values.yaml --set global.extraImages=true --set global.invocation.enabled=true \
-		--output $(CHART_NAME)-$(CHART_VERSION)-app-image.tar $(ROOT_DIR)
+		--output $(CHART_NAME)-${DRIVER_VERSION}-$(CHART_VERSION).tar $(ROOT_DIR)
 
 
 .PHONY: cleanup

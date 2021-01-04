@@ -30,13 +30,14 @@ pipeline {
                         // get chart info
                         def chart_name = sh(returnStdout: true, script: """cat Chart.yaml | grep ^name: | cut -d":" -f 2 |  tr -d "[:space:]" | tr -d '"' """).trim()
                         def chart_version = sh(returnStdout: true, script: """cat Chart.yaml | grep ^version: | cut -d":" -f 2 |  tr -d "[:space:]" | tr -d '"' """).trim()
+                        def driver_version = sh(returnStdout: true, script: """yq r charts/gpu-operator/values.yaml driver.version | awk -F '.' {'print \$1"-"\$2'} """).trim()
                         // add helm services repo
                         helmLib.helm_init()
                         // build gravitiy package
                         gravityLib.make_package("Makefile", "build")
                         sh("ls -l && pwd")
                         // upload gravity package to s3
-                        def s3_file_list = ["${chart_name}-${chart_version}-app-image.tar","${chart_name}-${chart_version}-app-image.md5"]
+                        def s3_file_list = ["${chart_name}-${driver_version}-${chart_version}.tar","${chart_name}-${driver_version}-${chart_version}.md5"]
                         s3Lib.sync_files(".",s3_file_list,"${GRAVITY_PACKAGES_S3_BASE_URL}/${env.BRANCH_NAME}")
                     }
                 }
